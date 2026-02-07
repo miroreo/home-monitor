@@ -1,3 +1,22 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
+
+:root {
+    @apply bg-gray-900 text-white
+}
+
+body {
+    @apply p-2.5
+}
+h1 {
+    @apply text-6xl font-bold
+}
+
+
+/* header {
+    @apply flex flex-row 
+}
+header > h1 {
+    @apply w-full
+} */

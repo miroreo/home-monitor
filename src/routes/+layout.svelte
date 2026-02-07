@@ -2,8 +2,16 @@
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
 
-	let { children } = $props();
+	import { setContext } from 'svelte';
+	import type { LayoutProps } from './$types';
+
+	let { children, data }: LayoutProps = $props();
+
+	setContext('status', () => data.status);
+	// let { children } = $props();
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
-{@render children()}
+<div class="min-w-full overflow-x-hidden">
+{@render children()}	
+</div>
