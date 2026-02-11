@@ -37,7 +37,7 @@ class TrainTracker {
         return {
             run: parseInt(raw.rn),
             route: stringToTrainRoute(raw.rt),
-            destName: raw.destNm,
+            destination: raw.destNm,
             predictionTime: new Date(raw.prdt),
             arrivalTime: new Date(raw.arrT),
             isApproaching: raw.isApp == "1",
@@ -59,7 +59,7 @@ type TTArrival = {
 export type Arrival = {
     run: number,
     route: TrainRoute,
-    destName: string,
+    destination: string,
     predictionTime: Date,
     arrivalTime: Date,
     isApproaching: boolean,
@@ -131,4 +131,50 @@ class BusTracker {
     constructor(key: string) {
         this.apiKey = key;
     }
+    async getPredictions(stopNumber: number) {
+      const requestUrl = `${BUSTRACKER_URL}/getpredictions?key=${this.apiKey}&stpid=${stopNumber}&format=json`;
+      const resp = await fetch(requestUrl);
+      // console.log(await resp.text())
+      const data = await resp.json() as {
+        "bustime-response": {
+          prd: BusTimePrediction[]
+        }
+      };
+      return data["bustime-response"].prd.map((p) => {
+        return {
+          time: new Date(
+            parseInt(p.tmstmp.slice(0, 4)),
+            parseInt(p.tmstmp.slice(4,6)) -1,
+            parseInt(p.tmstmp.slice(6,8)),
+            parseInt(p.tmstmp.slice(9, 11)),
+            parseInt(p.tmstmp.slice(12))),
+          destination: p.des,
+          minsUntilArrival: parseInt(p.prdctdn),
+          route: p.rt,
+          vehicleId: p.vid,
+          predictedTime: new Date(
+            parseInt(p.prdtm.slice(0, 4)),
+            parseInt(p.prdtm.slice(4,6)) -1,
+            parseInt(p.prdtm.slice(6,8)),
+            parseInt(p.prdtm.slice(9, 11)),
+            parseInt(p.prdtm.slice(12))),
+        } as BusArrival
+      })
+    }
 }
+export type BusTimePrediction = {
+  tmstmp: string,
+  vid: string,
+  rt: string,
+  des: string,
+  prdctdn: string,
+  prdtm: string,
+}
+export type BusArrival = {
+  time: Date,
+  vehicleId: string,
+  route: string,
+  destination: string,
+  minsUntilArrival: number,
+  predictedTime: Date
+};

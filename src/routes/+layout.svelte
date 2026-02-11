@@ -8,6 +8,8 @@
 	let { children, data }: LayoutProps = $props();
 
 	setContext('status', () => data.status);
+
+	setContext('weather', () => data.weather);
 	// let { children } = $props();
 </script>
 

@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { CTA, type Arrival } from '$lib/cta';
+import { CTA, type Arrival, type BusArrival } from '$lib/cta';
 import { env } from '$env/dynamic/private';
 
 const COMED_CURRENT_HOUR = "https://hourlypricing.comed.com/api?type=currenthouraverage";
@@ -33,14 +33,27 @@ const getArrivals = async (): Promise<Arrival[]> => {
     // return arrivals.sort((a,b) => (new Date(a.arrivalTime).valueOf()) - (new Date(b.arrivalTime).valueOf()));
     return arrivals.sort((a,b) => a.arrivalTime > b.arrivalTime ? 1 : -1).slice(0,10)
 }
-
+const getBusArrivals = async (): Promise<BusArrival[]> => {
+    console.log("getting bus arrivals");
+    const stops: string[] = env.CTA_BUS_STOPS?.split(",") || [] as string[];
+    if(stops.length == 0) return [];
+    const cta = new CTA(env.CTA_TRAINTRACKER_KEY, env.CTA_BUSTRACKER_KEY);
+    let arrivals: BusArrival[] = [];
+    for (const s of stops) {
+        let sArr = await cta.busTracker.getPredictions(parseInt(s));
+        arrivals.push(...sArr);
+    }
+    console.log(arrivals);
+    return arrivals.sort((a, b) => a.predictedTime > b.predictedTime ? 1 : -1).slice(0,10);
+}
 export type StatusData = {
     timems: number,
     energy: {
         currentHourPrice: number,
     },
     transit: {
-        trainArrivals: Arrival[]
+        trainArrivals: Arrival[],
+        busArrivals: BusArrival[]
     }
 }
 export const GET: RequestHandler = async ({ request, url, setHeaders }) => {
@@ -58,10 +71,12 @@ export const GET: RequestHandler = async ({ request, url, setHeaders }) => {
                 currentHourPrice: hourPrice.price
             },
             transit: {
-                trainArrivals: await getArrivals()
+                trainArrivals: await getArrivals(),
+                busArrivals: await getBusArrivals(),
             }
         } as StatusData)
     } catch (e) {
+        console.error(e);
         return json({}, {status: 500});
     }
 };

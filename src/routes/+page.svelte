@@ -5,10 +5,15 @@
 	import Card from '$lib/card.svelte';
 	import Arrival from '$lib/arrival.svelte';
 	import Clock from '$lib/clock.svelte';
+	import type { WeatherData } from './api/weather/+server';
+	import CurrentWeather from '$lib/currentWeather.svelte';
+	import ElectricPrice from '$lib/ElectricPrice.svelte';
 
     // const status: (() => StatusData) = getContext("status");
     let statusState = $state(
-        (getContext("status") as (() => StatusData))())
+        (getContext("status") as (() => StatusData))());
+    let weatherState = $state(
+        (getContext("weather") as (() => WeatherData))());
     onMount(() => {
         const interval = setInterval(() => {
             time = Date.now();
@@ -17,10 +22,18 @@
             fetch("/api/status").then((resp) => {
                 resp.json().then((val) => {
                     statusState = val;
+                    console.log(statusState);
                 });
             });
             // setContext("status", async () => await status.json());
         }, 10000)
+        const weatherInterval = setInterval(() => {
+            fetch("/api/weather").then((resp) => {
+                resp.json().then((val) => {
+                    weatherState = val as WeatherData;
+                });
+            });
+        }, 600000)
     })
     let time = $state(Date.now());
     const timeSinceUpdate = $derived(Math.floor(time/1000 - statusState.timems/1000) || 0);
@@ -32,22 +45,21 @@
     }
 </script>
 <header class="flex flex-row w-full ">
-    <!-- <h1>{hours.toString().padStart(2,"0")}:{minutes.toString().padStart(2,"0")}:{seconds.toString().padStart(2,"0")}</h1> -->
     <Clock />
-    
-    
 </header>
 <main class="flex">
-    <Card cardTitle="Energy Price" cardText="{statusState.energy?.currentHourPrice}¢"></Card>
+    <div class="">
+        <ElectricPrice price={statusState.energy.currentHourPrice} />
+    </div>
     <Card cardTitle="Transit">
         <div class="flex flex-col gap-y-0.5 h-96">
-            {#each statusState.transit.trainArrivals as arr}
+            {#each statusState.transit?.trainArrivals as arr}
                 <Arrival arrival={arr}/>
             {/each}
         </div>
         
     </Card>
-    <Card cardTitle="Weather">Current Weather Here</Card>
+    <Card cardTitle="Weather"><CurrentWeather currentWeather={weatherState.current}/></Card>
 </main>
 <footer class="bottom-0 absolute right-0 p-2.5">
     <div class="align-middle flex flex-row items-center gap-x-4">
