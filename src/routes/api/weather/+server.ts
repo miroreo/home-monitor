@@ -13,7 +13,7 @@ const OPEN_METEO_PARAMS = {
     daily: ["weather_code", "rain_sum", "temperature_2m_max", "temperature_2m_min"],
 	hourly: ["temperature_2m", "precipitation", "precipitation_probability", "apparent_temperature", "weather_code"],
 	current: ["temperature_2m", "precipitation", "weather_code", "wind_speed_10m", "wind_direction_10m", "apparent_temperature", "is_day"],
-	timezone: "America/Chicago",
+	// timezone: "America/Chicago",
 	temperature_unit: "fahrenheit",
 };
 	
