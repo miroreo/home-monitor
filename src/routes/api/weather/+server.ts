@@ -5,7 +5,7 @@ import { env } from '$env/dynamic/private';
 
 import { fetchWeatherApi } from 'openmeteo';
 
-const [lat, lon] = env.WEATHER_LOCATION.split(",");
+const [lat, lon] = env.WEATHER_LOCATION?.split(",") || [41.8832, -87.6324];
 
 const OPEN_METEO_PARAMS = {
     latitude: [lat],
