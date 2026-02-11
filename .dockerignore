@@ -1,0 +1,29 @@
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+
+# IDE / editor files
+.vscode
+.editorconfig
+
+# SvelteKit build/cache
+.svelte-kit
+
+# Node modules (we install them in Docker)
+node_modules
+
+# Local build output (Docker builds from source)
+build
+
+# Config files not needed in container
+.prettierrc
+.eslintrc.cjs
+.graphqlrc
+.npmrc
+
+# Environment files (secrets)
+**/.env
