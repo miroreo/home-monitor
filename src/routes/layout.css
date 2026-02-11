@@ -10,7 +10,7 @@ body {
     @apply p-2.5
 }
 h1 {
-    @apply text-6xl font-bold
+    @apply font-bold
 }
 
 
