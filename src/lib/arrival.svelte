@@ -1,9 +1,9 @@
 <script lang="ts">
     import type { Snippet } from 'svelte';
-	import type { Arrival } from './cta';
+	import type { Arrival, TransitArrival } from './cta';
 
     interface Props {
-		arrival: Arrival;
+		arrival: TransitArrival;
 	}
     let { arrival }: Props = $props();
     function minutesUntil(arrival: Date) {
@@ -14,7 +14,7 @@
     const minsUntil = $derived(minutesUntil(new Date(arrival.arrivalTime)));
 
 </script>
-<div class="flex flex-row arrivalCard min-w-75" data-destination="{arrival.destination}" data-line="{arrival.route.toString()}" class:italic={arrival.isScheduled}>
+<div class="flex flex-row arrivalCard min-w-75" data-destination="{arrival.destination}" data-line="{arrival.route}" class:italic={arrival.isScheduled}>
     <div class="w-full flex flex-col gap-0">
         <div class="align-middle text-xl">
             {arrival.destination}
@@ -85,7 +85,7 @@
         background-color: #e27ea6;
         color: white;
     }
-    .arrivalCard[data-line="Bus"] {
+    .arrivalCard {
         background-color: #565a5c;
         color: white
     }

@@ -49,11 +49,11 @@
 </header>
 <main class="flex">
     <div class="">
-        <ElectricPrice price={statusState.energy.currentHourPrice} />
+        <ElectricPrice price={statusState?.energy?.currentHourPrice} />
     </div>
     <Card cardTitle="Transit">
         <div class="flex flex-col gap-y-0.5 h-96">
-            {#each statusState.transit?.trainArrivals as arr}
+            {#each statusState.transit?.arrivals as arr}
                 <Arrival arrival={arr}/>
             {/each}
         </div>

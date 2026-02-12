@@ -1,5 +1,15 @@
 const TRAINTRACKER_URL = "https://lapi.transitchicago.com/api/1.0";
 const BUSTRACKER_URL = "http://www.ctabustracker.com/bustime/api/v2/";
+
+export type TransitArrival = {
+  vehicleNumber: number,
+  route: string,
+  destination: string,
+  arrivalTime: Date,
+  isApproaching?: boolean,
+  isScheduled?: boolean,
+  isDelayed?: boolean
+}
 export class CTA {
     trainTracker: TrainTracker;
     busTracker: BusTracker;
@@ -23,7 +33,7 @@ class TrainTracker {
         if(!data.ctatt.eta) {
             console.log(data.ctatt);
         }
-        let arrivals: Arrival[] = [];
+        let arrivals: TransitArrival[] = [];
         if(data.ctatt.eta !== undefined) {
             if(Array.isArray(data.ctatt.eta)) {
                 arrivals = data.ctatt.eta.map(this.parseArrival);
@@ -33,12 +43,11 @@ class TrainTracker {
         }
         return arrivals;
     }
-    parseArrival(raw: TTArrival): Arrival {
+    parseArrival(raw: TTArrival): TransitArrival {
         return {
-            run: parseInt(raw.rn),
-            route: stringToTrainRoute(raw.rt),
+            vehicleNumber: parseInt(raw.rn),
+            route: stringToTrainRoute(raw.rt).toString(),
             destination: raw.destNm,
-            predictionTime: new Date(raw.prdt),
             arrivalTime: new Date(raw.arrT),
             isApproaching: raw.isApp == "1",
             isDelayed: raw.isDly == "1",
@@ -140,25 +149,18 @@ class BusTracker {
           prd: BusTimePrediction[]
         }
       };
-      return data["bustime-response"].prd.map((p) => {
+      return data["bustime-response"].prd?.map((p) => {
         return {
-          time: new Date(
-            parseInt(p.tmstmp.slice(0, 4)),
-            parseInt(p.tmstmp.slice(4,6)) -1,
-            parseInt(p.tmstmp.slice(6,8)),
-            parseInt(p.tmstmp.slice(9, 11)),
-            parseInt(p.tmstmp.slice(12))),
           destination: p.des,
-          minsUntilArrival: parseInt(p.prdctdn),
           route: p.rt,
-          vehicleId: p.vid,
-          predictedTime: new Date(
+          vehicleNumber: parseInt(p.vid),
+          arrivalTime: new Date(
             parseInt(p.prdtm.slice(0, 4)),
             parseInt(p.prdtm.slice(4,6)) -1,
             parseInt(p.prdtm.slice(6,8)),
             parseInt(p.prdtm.slice(9, 11)),
             parseInt(p.prdtm.slice(12))),
-        } as BusArrival
+        } as TransitArrival
       })
     }
 }

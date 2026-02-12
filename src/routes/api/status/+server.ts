@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { CTA, type Arrival, type BusArrival } from '$lib/cta';
+import { CTA, type Arrival, type BusArrival, type TransitArrival } from '$lib/cta';
 import { env } from '$env/dynamic/private';
 
 const COMED_CURRENT_HOUR = "https://hourlypricing.comed.com/api?type=currenthouraverage";
@@ -18,10 +18,10 @@ const getCurrentHourPrice = async (): Promise<{time: Date, price: number}> =>  {
     };
 };
 
-const getArrivals = async (): Promise<Arrival[]> => {
+const getArrivals = async (): Promise<TransitArrival[]> => {
     const stations: string[] = env.CTA_TRAIN_STATIONS?.split(",") || [] as string[];
     const cta = new CTA(env.CTA_TRAINTRACKER_KEY, env.CTA_BUSTRACKER_KEY);
-    let arrivals: Arrival[] = [];
+    let arrivals: TransitArrival[] = [];
     for (const s of stations) {
         let sArr = await cta.trainTracker.getArrivals(parseInt(s));
 
@@ -31,20 +31,21 @@ const getArrivals = async (): Promise<Arrival[]> => {
     }
     // console.log(arrivals);
     // return arrivals.sort((a,b) => (new Date(a.arrivalTime).valueOf()) - (new Date(b.arrivalTime).valueOf()));
-    return arrivals.sort((a,b) => a.arrivalTime > b.arrivalTime ? 1 : -1).slice(0,10)
+    return arrivals.slice(0,10);
 }
-const getBusArrivals = async (): Promise<BusArrival[]> => {
+const getBusArrivals = async (): Promise<TransitArrival[]> => {
     console.log("getting bus arrivals");
     const stops: string[] = env.CTA_BUS_STOPS?.split(",") || [] as string[];
     if(stops.length == 0) return [];
     const cta = new CTA(env.CTA_TRAINTRACKER_KEY, env.CTA_BUSTRACKER_KEY);
-    let arrivals: BusArrival[] = [];
+    let arrivals: TransitArrival[] = [];
     for (const s of stops) {
         let sArr = await cta.busTracker.getPredictions(parseInt(s));
-        arrivals.push(...sArr);
+        if(Array.isArray(sArr)) arrivals.push(...sArr);
+        else arrivals.push(sArr);
     }
     console.log(arrivals);
-    return arrivals.sort((a, b) => a.predictedTime > b.predictedTime ? 1 : -1).slice(0,10);
+    return arrivals.sort((a, b) => a.arrivalTime > b.arrivalTime ? 1 : -1).slice(0,10);
 }
 export type StatusData = {
     timems: number,
@@ -52,8 +53,7 @@ export type StatusData = {
         currentHourPrice: number,
     },
     transit: {
-        trainArrivals: Arrival[],
-        busArrivals: BusArrival[]
+        arrivals: TransitArrival[],
     }
 }
 export const GET: RequestHandler = async ({ request, url, setHeaders }) => {
@@ -71,8 +71,7 @@ export const GET: RequestHandler = async ({ request, url, setHeaders }) => {
                 currentHourPrice: hourPrice.price
             },
             transit: {
-                trainArrivals: await getArrivals(),
-                busArrivals: await getBusArrivals(),
+                arrivals: (await getArrivals()).concat(await getBusArrivals()).sort((a,b) => a.arrivalTime > b.arrivalTime ? 1 : -1).slice(0,10),
             }
         } as StatusData)
     } catch (e) {

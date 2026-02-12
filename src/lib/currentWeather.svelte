@@ -16,7 +16,7 @@
         }
     }
     export let currentWeather: CurrentWeatherData;
-    let imageSrc = weatherCodes[currentWeather.weather_code.toString()][currentWeather.is_day ? "day" : "night"].image;
+    let imageSrc = weatherCodes[currentWeather?.weather_code.toString()][currentWeather.is_day ? "day" : "night"].image;
     let weatherDescription = weatherCodes[currentWeather.weather_code.toString()][currentWeather.is_day ? "day" : "night"].description;
 </script>
 <div class="h-full flex flex-col gap-y-2 text-center">
