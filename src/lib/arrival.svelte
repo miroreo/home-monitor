@@ -11,11 +11,16 @@
         const diff = arrival.getTime() - Date.now();
         return Math.ceil(diff / 60000);
     }
-    const minsUntil = $derived(minutesUntil(new Date(arrival.arrivalTime)));
+    const minsUntil = $derived(minutesUntil(new Date(arrival?.arrivalTime)));
 
 </script>
 <div class="flex flex-row arrivalCard min-w-75" data-destination="{arrival.destination}" data-line="{arrival.route}" class:italic={arrival.isScheduled}>
-    <div class="w-full flex flex-col gap-0">
+    <div class="w-full flex flex-row gap-2">
+        {#if arrival.mode == "bus"}
+        <div class="text-xl min-w-6">
+            {arrival.route}
+        </div>
+        {/if}
         <div class="align-middle text-xl">
             {arrival.destination}
         </div>

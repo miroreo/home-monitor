@@ -1,6 +1,7 @@
 const TRAINTRACKER_URL = "https://lapi.transitchicago.com/api/1.0";
 const BUSTRACKER_URL = "http://www.ctabustracker.com/bustime/api/v2/";
-
+const ALERTS_URL = "https://www.transitchicago.com/api/1.0/alerts.aspx?outputType=JSON";
+const L_LINES = ["red","blue","g","brn","p","y","pink","org"];
 export type TransitArrival = {
   vehicleNumber: number,
   route: string,
@@ -8,7 +9,16 @@ export type TransitArrival = {
   arrivalTime: Date,
   isApproaching?: boolean,
   isScheduled?: boolean,
-  isDelayed?: boolean
+  isDelayed?: boolean,
+  mode: "bus" | "train"
+}
+type ImpactedService = {
+  ServiceType: string,
+  ServiceTypeDescription: string,
+  ServiceName: string,
+  ServiceId: string,
+  ServiceBackColor: string,
+  ServiceTextColor: string,
 }
 export class CTA {
     trainTracker: TrainTracker;
@@ -18,6 +28,70 @@ export class CTA {
         this.busTracker = new BusTracker(busTrackerKey);
     }
 
+    static async getAlerts(): Promise<TransitAlert[]> {
+      const request_url = `${ALERTS_URL}&routeid=${L_LINES.join(",")}`;
+      // console.log(request_url);
+      const resp = await fetch(request_url);
+      const data: {CTAAlerts:{
+        TimeStamp: string,
+        ErrorMessage?: string,
+        Alert?: {
+          Impact: string,
+          EventStart: string,
+          EventEnd?: string,
+          TBD: string,
+          MajorAlert: string,
+          SeverityScore: string,
+          SeverityColor: string,
+          ShortDescription: string,
+          Headline: string,
+          AlertId: string,
+          ImpactedService: {Service: ImpactedService[] | ImpactedService}
+        }[]
+      }} = await resp.json().catch(async (e) => {
+        // console.error(e);
+        // console.log(await resp.text())
+      });
+      const alerts: TransitAlert[] = [];
+      if(data.CTAAlerts.ErrorMessage != null) {
+        console.error(data.CTAAlerts.ErrorMessage);
+        return alerts;
+      }
+      data.CTAAlerts.Alert?.forEach((alert) => {
+        
+        alerts.push({
+          id: parseInt(alert.AlertId),
+          description: alert.ShortDescription,
+          headline: alert.Headline,
+          impact: alert.Impact,
+          severity: {
+            score: parseInt(alert.SeverityColor),
+            color: alert.SeverityColor,
+          },
+          impactedServices: (Array.isArray(alert.ImpactedService.Service) ? 
+            alert.ImpactedService.Service.map(s => {return {
+              backgroundColor: s.ServiceBackColor,
+              textColor: s.ServiceTextColor,
+              serviceName: s.ServiceName,
+              serviceTypeDescription: s.ServiceTypeDescription,
+              serviceType: {"X": "System", "R": "Train", "B": "Bus", "T": "Station"}[s.ServiceType] as "System" | "Train" | "Bus" | "Station",
+            }})
+          
+          : [{
+              backgroundColor: alert.ImpactedService.Service.ServiceBackColor,
+              textColor: alert.ImpactedService.Service.ServiceTextColor,
+              serviceName: alert.ImpactedService.Service.ServiceName,
+              serviceTypeDescription: alert.ImpactedService.Service.ServiceTypeDescription,
+              serviceType: {"X": "System", "R": "Train", "B": "Bus", "T": "Station"}[alert.ImpactedService.Service.ServiceType] as "System" | "Train" | "Bus" | "Station",
+            }]),
+            major: alert.MajorAlert == "1",
+            start: new Date(alert.EventStart),
+            tbd: alert.TBD == "1",
+            end: alert.EventEnd ? new Date(alert.EventEnd) : undefined,
+        });
+      });
+      return alerts;
+    }
 }
 
 class TrainTracker {
@@ -51,7 +125,8 @@ class TrainTracker {
             arrivalTime: new Date(raw.arrT),
             isApproaching: raw.isApp == "1",
             isDelayed: raw.isDly == "1",
-            isScheduled: raw.isSch == "1"
+            isScheduled: raw.isSch == "1",
+            mode: "train"
         }
     }
 }
@@ -160,6 +235,7 @@ class BusTracker {
             parseInt(p.prdtm.slice(6,8)),
             parseInt(p.prdtm.slice(9, 11)),
             parseInt(p.prdtm.slice(12))),
+          mode: "bus"
         } as TransitArrival
       })
     }
@@ -180,3 +256,25 @@ export type BusArrival = {
   minsUntilArrival: number,
   predictedTime: Date
 };
+
+export type TransitAlert = {
+  id: number,
+  headline: string,
+  description: string,
+  severity: {
+    score: number,
+    color: string
+  },
+  impact: string,
+  start: Date,
+  end?: Date,
+  tbd: boolean,
+  major: boolean,
+  impactedServices: {
+    serviceType: "System" | "Train" | "Bus" | "Station",
+    serviceName: string,
+    serviceTypeDescription: string,
+    backgroundColor: string,
+    textColor: string
+  }[]
+}

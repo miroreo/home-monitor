@@ -3,8 +3,6 @@
 
     interface Props {
         price: number;
-        cardText?: string;
-        className?: string;
 	}
     let { price }: Props = $props();
 
